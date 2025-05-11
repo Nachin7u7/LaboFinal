@@ -1,0 +1,57 @@
+Laboratorio Final
+Requisitos de finalización
+Actividad Final de Laboratorio: Sistema Distribuido para Localización y Monitoreo de Nodo Móvil
+1. Introducción y Objetivos
+Esta actividad final de laboratorio aborda el problema de la localización y monitoreo de un dispositivo móvil en un entorno interior controlado mediante un sistema distribuido basado en microcontroladores ESP32.
+
+Objetivo General: Diseñar, implementar y evaluar un sistema distribuido compuesto por nodos ESP32 fijos (definidos como Beacons) y un nodo ESP32 móvil para estimar la zona de ubicación de este último y monitorear su temperatura. La información resultante será procesada en un servidor central y presentada en una interfaz de visualización bajo demanda.
+
+Objetivos Específicos:
+
+Aplicar conceptos de diseño de sistemas distribuidos para la recolección y procesamiento de datos de sensores.
+Utilizar mediciones RSSI, RTT para la estimación de proximidad.
+Integrar y aplicar mecanismos de sincronización de tiempo lógico para la correlación de datos distribuidos.
+Desarrollar un algoritmo para la estimación de localización basada en datos fusionados.
+Implementar un servicio para la consulta de datos y una interfaz de visualización.
+Analizar el comportamiento del sistema en términos de concurrencia, latencia y consistencia.
+2. Arquitectura Conceptual
+El sistema propuesto integra los siguientes componentes:
+
+Nodos Fijos (Beacons): Un mínimo de 2 a 3 ESP32 en ubicaciones predefinidas. Un 'Beacon' es un dispositivo fijo que detecta señales de dispositivos móviles cercanos. Su función es escanear periódicamente, medir una métrica de señal relevante (ej. RSSI, o potencialmente RTT) del Nodo Móvil, y reportar [ID_Beacon, ID_Movil, Metrica_Medida, Valor_Metrica, Timestamp_Logico] al Servidor Central.
+Nodo Móvil: Un ESP32 que se desplaza en el área designada. Debe ser detectable por los Beacons; esto puede lograrse configurándolo como Punto de Acceso Wi-Fi (SoftAP), mediante anuncios BLE, u otros métodos. Adicionalmente, mide su temperatura local y reporta [ID_Movil, Temperatura, Timestamp_Logico] al Servidor Central.
+Servidor Central (PC): Un proceso (Python sugerido) que actúa como punto de agregación. Recibe datos de todos los nodos. Implementa el mecanismo de sincronización seleccionado para interpretar timestamps. Almacena estado reciente. Ejecuta el algoritmo de estimación de localización utilizando lecturas de métrica de señal consideradas lógicamente contemporáneas. Expone resultados mediante una interfaz programática (ej. API REST).
+Cliente de Visualización (PC): Una aplicación que consulta al Servidor Central. Representa gráficamente un esquema del área, las posiciones de los Beacons, la zona de ubicación estimada del Nodo Móvil, y la temperatura de este (codificada por color). La visualización se actualiza periódicamente.
+3. Fundamentos
+La implementación deberá considerar y aplicar conceptos de:
+
+Comunicación Inter-Proceso.
+Sincronización: Aplicación de primitivas (ej. Relojes de Lamport) para establecer un orden causal o referencia temporal común aproximada.
+Procesamiento de Datos Distribuidos.
+Latencia y Concurrencia.
+4. Flexibilidad de Implementación
+Las elecciones específicas sobre métricas, métodos de detección, protocolos de comunicación, mecanismos exactos de sincronización, algoritmos de localización y herramientas de visualización quedan a discreción del grupo,
+
+5. Entregables
+La actividad final de laboratorio se estructura en tres entregables. Cada fase concluye con una demostración funcional y una defensa.
+
+Entregable 1 Funcionalidad Básica de Nodos y Comunicación Inicial
+Este entregable comprende un Beacon ESP32, el Nodo Móvil ESP32 y el Servidor Central.
+La funcionalidad mínima a demostrar es la capacidad del Beacon para detectar al Móvil, medir la métrica de señal seleccionada y transmitir los datos ([ID_Beacon, ID_Movil, Metrica, Valor, Timestamp]) al Servidor.
+Simultáneamente, el Nodo Móvil debe leer su temperatura y transmitir ([ID_Movil, Temperatura, Timestamp]) al Servidor.
+El Servidor debe recibir y registrar/mostrar correctamente ambos flujos de datos, utilizando un timestamping inicial documentado.
+La defensa requerirá explicar el método de detección RF, justificar el protocolo de comunicación, detallar el formato de mensajes, describir el mecanismo de timestamping inicial y verificar la recepción de datos en el Servidor mediante logs.
+Entregable 2 Sistema Multi-Beacon con Sincronización Lógica y Estimación Básica
+Este entregable integra al menos 2-3 Beacons, 1 Nodo Móvil y el Servidor Central.
+Se debe demostrar que todos los nodos reportan datos al Servidor y que se ha implementado un mecanismo de sincronización explícito (ej. Lamport). Los Timestamp_Logico deben reflejar este mecanismo.
+El Servidor debe usar activamente estos timestamps para seleccionar un conjunto de lecturas de métrica de señal consideradas "lógicamente contemporáneas".
+A partir de este conjunto sincronizado, el Servidor calculará una estimación de zona de proximidad inicial.
+Adicionalmente, el Servidor debe proveer un método para consultar esta zona estimada y la última temperatura.
+La defensa técnica se centrará en la explicación detallada del algoritmo de sincronización implementado, cómo el servidor lo utiliza para la selección de datos relevantes, la presentación de logs que evidencien los timestamps y la selección, y la verificación de la consulta al servicio del servidor. Se discutirá cómo la sincronización aporta a la coherencia de la estimación.
+Entregable 3 Sistema Completo: Estimación Refinada y Visualización Dinámica
+Este entregable representa la integración final del sistema, incluyendo el Cliente de Visualización.
+Se demostrará un algoritmo de estimación de localización más refinado en el Servidor, basado en múltiples lecturas sincronizadas para determinar un área/radio.
+El Cliente de Visualización consultará periódicamente al Servidor y mostrará dinámicamente en una interfaz gráfica el mapa esquemático, los Beacons, la zona/área estimada del Nodo Móvil, y su temperatura codificada por color.
+La actualización de la visualización (posición y color) debe ser evidente al mover el Nodo Móvil.
+La defensa del sistema requerirá la explicación del algoritmo de localización final y su dependencia de la sincronización, el mapeo T°->Color, y una discusión sobre la precisión, limitaciones (ej. inherentes a la métrica de señal, sincronización) y posibles mejoras del sistema desarrollado.
+6. Evaluación
+La evaluación de cada entregable considerará la demostración funcional, la claridad y profundidad de la defensa técnica (justificación de diseño, explicación de algoritmos, análisis de resultados), la correcta aplicación de los conceptos de sistemas distribuidos (especialmente sincronización), y opcionalmente la calidad del código y documentación asociada.
