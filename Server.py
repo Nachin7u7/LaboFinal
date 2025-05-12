@@ -209,6 +209,9 @@ def visualizacion():
 
     # Calcular posición estimada
     puntos = []
+    beacon_cercano = max(lecturas, key=lambda x: x['rssi'])  # Beacon con mayor RSSI
+    fuera_area = any(lectura['rssi'] < -65 for lectura in lecturas)  # Verificar si algún RSSI está por debajo de -65
+
     for lectura in lecturas:
         beacon_id = lectura['id_beacon']
         rssi = lectura['rssi']
@@ -233,18 +236,49 @@ def visualizacion():
     else:
         pos_x, pos_y = None, None
 
+    # Ajustar posición si está fuera del área
+    if fuera_area:
+        beacon_cercano_pos = beacon_pos[beacon_cercano['id_beacon']]
+        dx = pos_x - beacon_cercano_pos[0]
+        dy = pos_y - beacon_cercano_pos[1]
+        distance_scale = 2  # Aproximadamente 2 metros fuera del beacon más cercano
+        pos_x = beacon_cercano_pos[0] + dx * distance_scale
+        pos_y = beacon_cercano_pos[1] + dy * distance_scale
+
     # Obtener temperatura del nodo móvil
     temperatura = node_data[id_movil]['temperatura']
 
     # Crear gráfica
     fig, ax = plt.subplots()
+
+    # Dibujar líneas segmentadas entre los beacons
+    beacon_coords = list(beacon_pos.values())
+    for i in range(len(beacon_coords)):
+        x1, y1 = beacon_coords[i]
+        x2, y2 = beacon_coords[(i + 1) % len(beacon_coords)]  # Conectar al siguiente beacon (circular)
+        ax.plot([x1, x2], [y1, y2], linestyle='--', color='gray', label='Área de triangulación' if i == 0 else None)
+
+    # Dibujar los beacons
     for beacon_id, (x, y) in beacon_pos.items():
         ax.scatter(x, y, label=beacon_id, color='blue')
         ax.text(x, y, beacon_id, fontsize=9, ha='right')
 
+    # Dibujar el nodo móvil
     if pos_x is not None and pos_y is not None:
-        ax.scatter(pos_x, pos_y, label=f'ESP32 Móvil (Temp: {temperatura}°C)', color='red')
+        color = 'red' if fuera_area else 'green'
+        label = f'ESP32 Móvil (Temp: {temperatura}°C)'
+        if fuera_area:
+            label += f' - Fuera del área (Cerca de {beacon_cercano["id_beacon"]})'
+        ax.scatter(pos_x, pos_y, label=label, color=color)
         ax.text(pos_x, pos_y, f'ESP32\nTemp: {temperatura}°C', fontsize=9, ha='left')
+
+    # Ajustar límites del gráfico si está fuera del área
+    if fuera_area:
+        ax.set_xlim(min(0, pos_x - 2), max(2, pos_x + 2))
+        ax.set_ylim(min(0, pos_y - 2), max(2, pos_y + 2))
+    else:
+        ax.set_xlim(-1, 3)
+        ax.set_ylim(-1, 3)
 
     ax.set_title('Visualización de Beacons y ESP32 Móvil')
     ax.set_xlabel('X')
