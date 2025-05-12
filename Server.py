@@ -258,7 +258,24 @@ def visualizacion():
     buf.seek(0)
     plt.close(fig)
 
-    return Response(buf, mimetype='image/png')
+    # Crear respuesta HTML con meta-refresh
+    img_base64 = base64.b64encode(buf.getvalue()).decode('utf-8')
+    html = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="refresh" content="1"> <!-- Refrescar cada 1 segundo -->
+        <title>Visualización</title>
+    </head>
+    <body>
+        <h1>Visualización de Beacons y ESP32 Móvil</h1>
+        <img src="data:image/png;base64,{img_base64}" alt="Visualización">
+    </body>
+    </html>
+    """
+    return Response(html, mimetype='text/html')
 
 @socketio.on('connect')
 def handle_connect():
